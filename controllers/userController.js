@@ -16,8 +16,31 @@ const registerUser = asyncHandler(async(req , res) => {
         throw new Error("Please add all fields");
     }
 
+    if (
+        typeof name !== 'string' ||
+        typeof email !== 'string' ||
+        typeof password !== 'string'
+    ) {
+        res.status(400);
+        throw new Error('Invalid input types');
+    }
+
+    const normalizedName = name.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+        res.status(400);
+        throw new Error('Please provide a valid email');
+    }
+
+    if (password.length < 8) {
+        res.status(400);
+        throw new Error('Password must be at least 8 characters long');
+    }
+
 // Check if the user exists
-const userExists = await User.findOne({email})
+const userExists = await User.findOne({ email: normalizedEmail })
 
 if (userExists) {
     res.status(400); // if user exists we don't want to register again
@@ -30,7 +53,9 @@ const hashedPassword = await bcrypt.hash(password, salt);
 
 //Create User
 const user = await User.create({
-    name , email , password : hashedPassword
+    name: normalizedName,
+    email: normalizedEmail,
+    password : hashedPassword
 })
 
 if(user){
@@ -52,8 +77,20 @@ throw new Error('Invalid user data');
 // @access public
 const loginUser = asyncHandler(async(req , res) => {
     const {email , password} = req.body;
+
+    if (!email || !password) {
+        res.status(400);
+        throw new Error('Please provide email and password');
+    }
+
+    if (typeof email !== 'string' || typeof password !== 'string') {
+        res.status(400);
+        throw new Error('Invalid input types');
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
 // check for user email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (user && (await bcrypt.compare(password , user.password))) {
         res.json({

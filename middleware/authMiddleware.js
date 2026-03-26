@@ -19,6 +19,11 @@ if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')
         // get user from the token
         req.user = await User.findById(decoded.id).select('-password');
 
+        if (!req.user) {
+            res.status(401);
+            throw new Error('Not Authorized');
+        }
+
         next();
     } catch (error) {
         console.log(error);

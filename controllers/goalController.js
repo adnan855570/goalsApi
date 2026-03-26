@@ -20,12 +20,29 @@ const setGoals = asyncHandler(async(req , res) => {
         res.status(400);
         throw new Error('Please enter a text field');
     }
+
+    if (typeof req.body.text !== 'string') {
+        res.status(400);
+        throw new Error('Text must be a string');
+    }
+
+    const text = req.body.text.trim();
+    if (!text) {
+        res.status(400);
+        throw new Error('Please enter a valid text field');
+    }
+
+    if (text.length > 500) {
+        res.status(400);
+        throw new Error('Text must be 500 characters or fewer');
+    }
+
 const goal = await Goal.create({
-    text : req.body.text,
+    text,
     user : req.user.id,
 })
 
-    res.status(200).json({message : 'Set goals'});
+    res.status(201).json(goal);
 });
 
 //@description update goals
@@ -51,8 +68,23 @@ if(goal.user.toString() !== user.id) {
     throw new Error(`User not authorized`);
 }
 
+if (req.body.text === undefined || typeof req.body.text !== 'string') {
+    res.status(400);
+    throw new Error('Text must be provided as a string');
+}
 
-const updatedGoal = await Goal.findByIdAndUpdate(req.params.id, req.body, {
+const text = req.body.text.trim();
+if (!text) {
+    res.status(400);
+    throw new Error('Text cannot be empty');
+}
+
+if (text.length > 500) {
+    res.status(400);
+    throw new Error('Text must be 500 characters or fewer');
+}
+
+const updatedGoal = await Goal.findByIdAndUpdate(req.params.id, { text }, {
     new : true,
 })
 
@@ -83,7 +115,7 @@ if(goal.user.toString() !== user.id) {
     throw new Error(`User not authorized`);
 }
 await goal.remove();
-    res.status(200).json(`{id : req.params.id}`);
+    res.status(200).json({ id : req.params.id });
 });
 
 
